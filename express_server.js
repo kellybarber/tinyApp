@@ -3,7 +3,9 @@ const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 8080; // default port 8080
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser());
 app.set("view engine", "ejs");
 
 // An object to represent the database
@@ -23,6 +25,11 @@ function generateRandomString(fullAddress) {
   return randomString;
 }
 
+app.post("/urls/login", (req, res) => {
+  res.cookie(req.body['username']);
+  res.redirect(301, "/urls/");
+})
+
 // Home Page
 app.get("/", (req, res) => {
   res.end("Welcome to tinyAPP!");
@@ -30,9 +37,19 @@ app.get("/", (req, res) => {
 
 // Urls list page
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase };
+  let templateVars = {
+    username: req.cookies["username"],
+    urls: urlDatabase
+  };
   res.render("urls_index", templateVars);
 })
+
+
+// Urls list page
+// app.get("/urls", (req, res) => {
+//   let templateVars = { urls: urlDatabase };
+//   res.render("urls_index", templateVars);
+// })
 
 // Page to submit new url
 app.get("/urls/new", (req, res) => {
@@ -54,12 +71,6 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect(301, "/urls/");
 })
 
-// Redirect to website after adding short url
-// app.get("/urls/:shortURL", (req, res) => {
-//   let longURL = urlDatabase[req.params.shortURL];
-//   res.redirect(longURL);
-// })
-
 // Fallback request for unknown filepath
 app.get("/urls/:id", (req, res) => {
   let templateVars = { shortURL: req.params.id, longURL: urlDatabase[req.params.id] };
@@ -72,6 +83,12 @@ app.post("/urls/:id/update", (req, res) => {
 })
 
 
+// Redirect to website after adding short url
+// app.get("/urls/:shortURL", (req, res) => {
+//   let longURL = urlDatabase[req.params.shortURL];
+//   res.redirect(longURL);
+// })
+
 // Error handler
 app.use(function(err, req, res, next){
     console.error(err.stack);
@@ -82,7 +99,6 @@ app.use(function(err, req, res, next){
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 })
-
 
 
 
