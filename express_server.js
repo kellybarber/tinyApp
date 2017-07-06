@@ -25,8 +25,18 @@ function generateRandomString(fullAddress) {
   return randomString;
 }
 
+// --> Begin server responses <-- //
+
+// Login with cookie
 app.post("/urls/login", (req, res) => {
-  res.cookie(req.body['username']);
+  let name = req.body;
+  res.cookie('username', name['username']);
+  res.redirect(301, "/urls/");
+})
+
+// Logout with cookie
+app.post("/urls/logout", (req, res) => {
+  res.clearCookie('username');
   res.redirect(301, "/urls/");
 })
 
@@ -38,22 +48,18 @@ app.get("/", (req, res) => {
 // Urls list page
 app.get("/urls", (req, res) => {
   let templateVars = {
-    username: req.cookies["username"],
+    username: req.cookies['username'],
     urls: urlDatabase
   };
   res.render("urls_index", templateVars);
 })
 
-
-// Urls list page
-// app.get("/urls", (req, res) => {
-//   let templateVars = { urls: urlDatabase };
-//   res.render("urls_index", templateVars);
-// })
-
 // Page to submit new url
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  let templateVars = {
+    username: req.cookies['username'],
+  };
+  res.render("urls_new", templateVars);
 })
 
 // Post request adding short and long url to the database
@@ -71,17 +77,21 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect(301, "/urls/");
 })
 
-// Fallback request for unknown filepath
+// URL update form
 app.get("/urls/:id", (req, res) => {
-  let templateVars = { shortURL: req.params.id, longURL: urlDatabase[req.params.id] };
+  let templateVars = {
+    shortURL: req.params.id,
+    longURL: urlDatabase[req.params.id],
+    username: req.cookies['username']
+  };
   res.render("urls_show", templateVars);
 })
 
+// URL update request
 app.post("/urls/:id/update", (req, res) => {
   urlDatabase[req.params.id] = req.body['longURL'];
   res.redirect(301, "/urls/")
 })
-
 
 // Redirect to website after adding short url
 // app.get("/urls/:shortURL", (req, res) => {

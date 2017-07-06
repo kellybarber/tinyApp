@@ -1,7 +1,15 @@
 
 <title>tinyAPP</title>
 
-<form action="/urls/login" method="POST" style="margin:20px;">
-  <label for="username">Name: </label>
-  <input id="username" type="text" name="username" placeholder="name" style="width: 300px">
-  <input type="submit" value="Submit">
+<% if (!username) { %>
+  <form action="/urls/login" method="POST" style="margin:20px;">
+    <label for="username">Name: </label>
+    <input id="username" type="text" name="username" placeholder="name" style="width: 300px">
+    <input type="submit" value="Login">
+  </form>
+<% } else { %>
+  <form action="/urls/logout" method="POST" style="margin:20px;">
+    <label for="username"> <%= username %> </label>
+    <input type="submit" value="Logout">
+  </form>
+<% } %>
