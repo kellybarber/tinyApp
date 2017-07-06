@@ -36,16 +36,32 @@ function generateRandomString() {
 
 // --> Server Responses <-- //
 
-// User login
+// User login page
+app.get("/urls/login", (req, res) => {
+  res.render("urls_login");
+})
+
+// User login handler
 app.post("/urls/login", (req, res) => {
-  let name = req.body;
-  res.cookie('username', name['username']);
-  res.redirect(301, "/urls/");
+  let id = generateRandomString();
+  let email = req.body['email'];
+  let password = req.body['password'];
+  if (!email || !password) {
+    res.sendStatus(400);
+  } else if (email && password) {
+    for (prop in users) {
+      if (email === users[prop]['email'] && password === users[prop]['password']) {
+        res.cookie('user_id', users[prop]['id']);
+        res.redirect(301, "/urls/");
+      }
+    }
+  res.sendStatus(404);
+  }
 })
 
 // User logout
 app.post("/urls/logout", (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   res.redirect(301, "/urls/");
 })
 
@@ -54,7 +70,7 @@ app.get("/urls/register", (req, res) => {
   res.render("urls_register")
 })
 
-// User registration w/ error handler
+// User registration handler
 app.post("/urls/register", (req, res) => {
   let id = generateRandomString();
   let email = req.body['email'];
@@ -78,7 +94,7 @@ app.post("/urls/register", (req, res) => {
   }
 })
 
-// Home Page
+// Landing page
 app.get("/", (req, res) => {
   res.end("Welcome to tinyAPP!");
 })
@@ -86,16 +102,16 @@ app.get("/", (req, res) => {
 // Urls list page
 app.get("/urls", (req, res) => {
   let templateVars = {
-    username: req.cookies['username'],
+    user_id: users[req.cookies['user_id']],
     urls: urlDatabase
   };
   res.render("urls_index", templateVars);
 })
 
-// URL submission page
+// New URL submission page
 app.get("/urls/new", (req, res) => {
   let templateVars = {
-    username: req.cookies['username'],
+    user_id: users[req.cookies['user_id']]
   };
   res.render("urls_new", templateVars);
 })
@@ -126,7 +142,7 @@ app.get("/urls/:id", (req, res) => {
   let templateVars = {
     shortURL: req.params.id,
     longURL: urlDatabase[req.params.id],
-    username: req.cookies['username']
+    user_id: users[req.cookies['user_id']]
   };
   res.render("urls_show", templateVars);
 })
