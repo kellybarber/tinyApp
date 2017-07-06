@@ -8,12 +8,13 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 app.set("view engine", "ejs");
 
-// An object to represent the database
+// Shortened URL database
 let urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
 
+// Registered user database
 let users = {
   "userRandomID": {
     id: "userRandomID",
@@ -22,7 +23,7 @@ let users = {
   }
 }
 
-// Function to create random strings used as shortened urls
+// Random string generator
 function generateRandomString() {
   const charSet = 'abcdefghijklmnopqrstuv123456789';
   let randomString = '';
@@ -33,37 +34,48 @@ function generateRandomString() {
   return randomString;
 }
 
-// --> Begin server responses <-- //
+// --> Server Responses <-- //
 
-// Login with cookie
+// User login
 app.post("/urls/login", (req, res) => {
   let name = req.body;
   res.cookie('username', name['username']);
   res.redirect(301, "/urls/");
 })
 
-// Logout with cookie
+// User logout
 app.post("/urls/logout", (req, res) => {
   res.clearCookie('username');
   res.redirect(301, "/urls/");
 })
 
+// User registration page
 app.get("/urls/register", (req, res) => {
   res.render("urls_register")
 })
 
+// User registration w/ error handler
 app.post("/urls/register", (req, res) => {
   let id = generateRandomString();
   let email = req.body['email'];
   let password = req.body['password'];
-  users[id] = {
-    'id': id,
-    'email': email,
-    'password': password
+  if (!email || !password) {
+    res.sendStatus(400);
+  } else if (email && password) {
+    for (prop in users) {
+      if (email === users[prop]['email']) {
+        res.sendStatus(400);
+      } else {
+        users[id] = {
+          'id': id,
+          'email': email,
+          'password': password
+        }
+        res.cookie('user_id', id);
+        res.redirect(301, "/urls/");
+      }
+    }
   }
-  res.cookie('user_id', id);
-  console.log(users[id]);
-  res.redirect(301, "/urls/");
 })
 
 // Home Page
@@ -80,7 +92,7 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 })
 
-// Page to submit new url
+// URL submission page
 app.get("/urls/new", (req, res) => {
   let templateVars = {
     username: req.cookies['username'],
@@ -88,7 +100,7 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 })
 
-// Post request adding short and long url to the database
+// URL submission handler
 app.post("/urls", (req, res) => {
   let newURL = req.body['longURL'];
   let shortenedURL = generateRandomString();
@@ -103,13 +115,13 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect(301, "/urls/");
 })
 
-// Redirects to short URL through link
+// Redirect to URL website (Currently through short URL link)
 app.get("/urls/:shortURL/redirect", (req, res) => {
   let longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
 })
 
-// URL update form
+// URL update page
 app.get("/urls/:id", (req, res) => {
   let templateVars = {
     shortURL: req.params.id,
@@ -119,11 +131,13 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 })
 
-// URL update request
+// URL update handler
 app.post("/urls/:id/update", (req, res) => {
   urlDatabase[req.params.id] = req.body['longURL'];
   res.redirect(301, "/urls/");
 })
+
+// --> Port Listener & Error Handler <-- //
 
 // Error handler
 app.use(function(err, req, res, next){
