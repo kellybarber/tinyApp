@@ -11,7 +11,7 @@
 
     <ul>
         <% for(prop in urls) { %>
-          <li> <a href="/urls/<%= prop %>"><%= prop %></a>: <%= urls[prop] %>
+          <li> <a href="/urls/<%= prop %>/redirect"><%= prop %></a>: <%= urls[prop] %>
             <form method="POST" action="/urls/<%= prop %>/delete">
               <input type="submit" value="Delete">
             </form>

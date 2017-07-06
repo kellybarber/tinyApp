@@ -14,8 +14,16 @@ let urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+let users = {
+  "userRandomID": {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  }
+}
+
 // Function to create random strings used as shortened urls
-function generateRandomString(fullAddress) {
+function generateRandomString() {
   const charSet = 'abcdefghijklmnopqrstuv123456789';
   let randomString = '';
   for (i = 0; i < 6; i++) {
@@ -37,6 +45,24 @@ app.post("/urls/login", (req, res) => {
 // Logout with cookie
 app.post("/urls/logout", (req, res) => {
   res.clearCookie('username');
+  res.redirect(301, "/urls/");
+})
+
+app.get("/urls/register", (req, res) => {
+  res.render("urls_register")
+})
+
+app.post("/urls/register", (req, res) => {
+  let id = generateRandomString();
+  let email = req.body['email'];
+  let password = req.body['password'];
+  users[id] = {
+    'id': id,
+    'email': email,
+    'password': password
+  }
+  res.cookie('user_id', id);
+  console.log(users[id]);
   res.redirect(301, "/urls/");
 })
 
@@ -65,9 +91,9 @@ app.get("/urls/new", (req, res) => {
 // Post request adding short and long url to the database
 app.post("/urls", (req, res) => {
   let newURL = req.body['longURL'];
-  let shortenedURL = generateRandomString(newURL);
+  let shortenedURL = generateRandomString();
   urlDatabase[shortenedURL] = newURL;
-  res.redirect(301, "/urls/")     // redirects to list rather than specified url
+  res.redirect(301, "/urls/");     // redirects to list rather than specified url
   // res.redirect(301, "/urls/" + shortenedURL)
 })
 
@@ -75,6 +101,12 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
   res.redirect(301, "/urls/");
+})
+
+// Redirects to short URL through link
+app.get("/urls/:shortURL/redirect", (req, res) => {
+  let longURL = urlDatabase[req.params.shortURL];
+  res.redirect(longURL);
 })
 
 // URL update form
@@ -90,19 +122,13 @@ app.get("/urls/:id", (req, res) => {
 // URL update request
 app.post("/urls/:id/update", (req, res) => {
   urlDatabase[req.params.id] = req.body['longURL'];
-  res.redirect(301, "/urls/")
+  res.redirect(301, "/urls/");
 })
-
-// Redirect to website after adding short url
-// app.get("/urls/:shortURL", (req, res) => {
-//   let longURL = urlDatabase[req.params.shortURL];
-//   res.redirect(longURL);
-// })
 
 // Error handler
 app.use(function(err, req, res, next){
-    console.error(err.stack);
-    res.status(500).send('Something broke!');
+  console.error(err.stack);
+  es.status(500).send('Something broke!');
 })
 
 // Port listener
