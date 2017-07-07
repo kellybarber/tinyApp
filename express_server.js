@@ -4,14 +4,15 @@ const app = express();
 const PORT = process.env.PORT || 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const bcrypt = require('bcrypt');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 app.set("view engine", "ejs");
 
 // Shortened URL database
 let urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": { url: "http://www.lighthouselabs.ca", userID: "lx4b2e"},
+  "9sm5xK": { url: "http://www.google.com", userID: "b3r25f" }
 };
 
 // Registered user database
@@ -50,19 +51,20 @@ app.post("/urls/login", (req, res) => {
     res.sendStatus(400);
   } else if (email && password) {
     for (prop in users) {
-      if (email === users[prop]['email'] && password === users[prop]['password']) {
+      if (email === users[prop]['email'] && bcrypt.compareSync(password, users[prop]['password'])) {
         res.cookie('user_id', users[prop]['id']);
-        res.redirect(301, "/urls/");
+        res.redirect("/urls/");
       }
     }
-  res.sendStatus(404);
+  } else {
+    res.sendStatus(404);
   }
 })
 
 // User logout
 app.post("/urls/logout", (req, res) => {
   res.clearCookie('user_id');
-  res.redirect(301, "/urls/");
+  res.redirect("/urls/");
 })
 
 // User registration page
@@ -75,6 +77,7 @@ app.post("/urls/register", (req, res) => {
   let id = generateRandomString();
   let email = req.body['email'];
   let password = req.body['password'];
+  let hashedPassword = bcrypt.hashSync(password, 10);
   if (!email || !password) {
     res.sendStatus(400);
   } else if (email && password) {
@@ -85,12 +88,15 @@ app.post("/urls/register", (req, res) => {
         users[id] = {
           'id': id,
           'email': email,
-          'password': password
+          'password': hashedPassword
         }
+        console.log(users);
         res.cookie('user_id', id);
-        res.redirect(301, "/urls/");
+        res.redirect("/urls/");
       }
     }
+  } else {
+    res.sendStatus(404);
   }
 })
 
@@ -100,7 +106,7 @@ app.get("/", (req, res) => {
 })
 
 // Urls list page
-app.get("/urls", (req, res) => {
+app.get("/urls/", (req, res) => {
   let templateVars = {
     user_id: users[req.cookies['user_id']],
     urls: urlDatabase
@@ -108,49 +114,63 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 })
 
-// New URL submission page
+// New URL creator
 app.get("/urls/new", (req, res) => {
   let templateVars = {
     user_id: users[req.cookies['user_id']]
   };
-  res.render("urls_new", templateVars);
+  if (req.cookies['user_id']) {
+    res.render("urls_new", templateVars);
+  } else {
+    res.redirect("/urls/")
+  }
 })
 
 // URL submission handler
-app.post("/urls", (req, res) => {
+app.post("/urls/", (req, res) => {
   let newURL = req.body['longURL'];
   let shortenedURL = generateRandomString();
-  urlDatabase[shortenedURL] = newURL;
-  res.redirect(301, "/urls/");     // redirects to list rather than specified url
+  urlDatabase[shortenedURL] = {};
+  urlDatabase[shortenedURL]['url'] = newURL;
+  urlDatabase[shortenedURL]['userID'] = req.cookies['user_id'];
+  res.redirect("/urls/");     // redirects to list rather than specified url
   // res.redirect(301, "/urls/" + shortenedURL)
 })
 
 // Button to delete url from database
 app.post("/urls/:id/delete", (req, res) => {
-  delete urlDatabase[req.params.id];
-  res.redirect(301, "/urls/");
-})
-
-// Redirect to URL website (Currently through short URL link)
-app.get("/urls/:shortURL/redirect", (req, res) => {
-  let longURL = urlDatabase[req.params.shortURL];
-  res.redirect(longURL);
+  if (urlDatabase[req.params.id]['userID'] === req.cookies['user_id']) {
+    delete urlDatabase[req.params.id];
+    res.redirect("/urls/");
+  } else {
+    res.redirect("/urls/");
+  }
 })
 
 // URL update page
-app.get("/urls/:id", (req, res) => {
+app.get("/urls/:id/edit", (req, res) => {
   let templateVars = {
     shortURL: req.params.id,
     longURL: urlDatabase[req.params.id],
     user_id: users[req.cookies['user_id']]
   };
-  res.render("urls_show", templateVars);
+  if (urlDatabase[req.params.id]['userID'] === req.cookies['user_id']) {
+    res.render("urls_show", templateVars);
+  } else {
+    res.redirect("/urls/")
+  }
 })
 
 // URL update handler
 app.post("/urls/:id/update", (req, res) => {
-  urlDatabase[req.params.id] = req.body['longURL'];
-  res.redirect(301, "/urls/");
+  urlDatabase[req.params.id]['url'] = req.body['longURL'];
+  res.redirect("/urls/");
+})
+
+// Redirect to URL website (Currently through short URL link)
+app.get("/urls/:shortURL", (req, res) => {
+  let id = urlDatabase[req.params.shortURL];
+  res.redirect(id['url']);
 })
 
 // --> Port Listener & Error Handler <-- //
@@ -158,14 +178,13 @@ app.post("/urls/:id/update", (req, res) => {
 // Error handler
 app.use(function(err, req, res, next){
   console.error(err.stack);
-  es.status(500).send('Something broke!');
+  res.status(500).send('Something broke!');
 })
 
 // Port listener
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 })
-
 
 
 // app.get("/urls.json", (req, res) => {

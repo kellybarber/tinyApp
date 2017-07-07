@@ -7,23 +7,33 @@
   <body>
     <header><% include ./partials/_header %></header>
 
+  <% if (!user_id) { %>
+    <h1> Please Register or Login to see URLs </h1>
+  <% } else { %>
     <h1>Shortened URLS</h1>
 
     <ul>
         <% for(prop in urls) { %>
-          <li> <a href="/urls/<%= prop %>/redirect"><%= prop %></a>: <%= urls[prop] %>
-            <form method="POST" action="/urls/<%= prop %>/delete">
-              <input type="submit" value="Delete">
-            </form>
-            <form method="GET" action="/urls/<%= prop %>">
-              <input type="submit" value="Edit">
-            </form>
-          </li>
+          <% if (urls[prop]['userID'] == user_id['id']) { %>
+
+            <li> <a href="/urls/<%= prop %>"><%= prop %></a>: <%= urls[prop]['url'] %>
+              <form method="POST" action="/urls/<%= prop %>/delete">
+                <input type="submit" value="Delete">
+              </form>
+              <form method="GET" action="/urls/<%= prop %>/edit">
+                <input type="submit" value="Edit">
+              </form>
+            </li>
+          <% } %>
         <% }; %>
 
     </ul>
 
     <p><a href="/urls/new">Make a New Shortened URL</a></p>
+
+  <% } %>
+
+
 
   </body>
 </html>
