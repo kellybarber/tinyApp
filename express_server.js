@@ -25,7 +25,7 @@ let users = {
     email: "user@example.com",
     password: "purple-monkey-dinosaur"
   }
-}
+};
 
 // Random string generator
 function generateRandomString() {
@@ -36,16 +36,17 @@ function generateRandomString() {
     randomString += charSet[randomNum]
   }
   return randomString;
-}
+};
+
 
 // --> Server Responses <-- //
 
 
-// -> User Handling //
+// -> User Infrastructure //
 
 // User registration page
 app.get("/urls/register", (req, res) => {
-  res.render("urls_register")
+  res.render("urls_register");
 })
 
 // User registration handler
@@ -106,11 +107,11 @@ app.post("/urls/logout", (req, res) => {
 })
 
 
-// -> Site Handling //
+// -> Site Infrastructure //
 
 // Landing page
 app.get("/", (req, res) => {
-  res.end("Welcome to tinyAPP!");
+  res.render("landingPage");
 })
 
 // Urls list page
@@ -140,7 +141,7 @@ app.get("/urls/new", (req, res) => {
   if (req.session.user_id) {
     res.render("urls_new", templateVars);
   } else {
-    res.redirect("/urls/")
+    res.redirect("/urls/login");
   }
 })
 
@@ -164,7 +165,7 @@ app.get("/urls/:id/edit", (req, res) => {
   if (urlDatabase[req.params.id]['userID'] === req.session.user_id) {
     res.render("urls_show", templateVars);
   } else {
-    res.redirect("/urls/")
+    res.redirect("/urls/");
   }
 })
 
@@ -180,6 +181,7 @@ app.get("/urls/:shortURL", (req, res) => {
   res.redirect(id['url']);
 })
 
+
 // --> Port Listener & Error Handler <-- //
 
 // Error handler
@@ -192,8 +194,3 @@ app.use(function(err, req, res, next){
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 })
-
-
-// app.get("/urls.json", (req, res) => {
-//   res.json(urlDatabase);
-// });
