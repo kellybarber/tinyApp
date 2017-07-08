@@ -15,7 +15,6 @@
     <ul>
         <% for(prop in urls) { %>
           <% if (urls[prop]['userID'] == user_id['id']) { %>
-
             <li> <a href="/urls/<%= prop %>"><%= prop %></a>: <%= urls[prop]['url'] %>
               <form method="POST" action="/urls/<%= prop %>/delete">
                 <input type="submit" value="Delete">
