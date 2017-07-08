@@ -1,4 +1,5 @@
 
+// Foundational Dependencies
 const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -123,7 +124,7 @@ app.get("/urls/", (req, res) => {
   res.render("urls_index", templateVars);
 })
 
-// Button to delete url from database
+// URL delete button
 app.post("/urls/:id/delete", (req, res) => {
   if (urlDatabase[req.params.id]['userID'] === req.session.user_id) {
     delete urlDatabase[req.params.id];
@@ -175,7 +176,7 @@ app.post("/urls/:id/update", (req, res) => {
   res.redirect("/urls/");
 })
 
-// Redirect to URL website (Currently through short URL link)
+// Redirect to external website -> Short URL link or nav bar
 app.get("/urls/:shortURL", (req, res) => {
   let id = urlDatabase[req.params.shortURL];
   res.redirect(id['url']);
